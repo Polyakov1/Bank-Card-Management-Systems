@@ -1,119 +1,111 @@
-Система управления банковскими картами (Card Management System)
+# Система Управления Банковскими Картами (Backend)
 
-Описание проекта
-Backend-система для управления банковскими картами, разработанная на Java с использованием Spring Boot.
- Система предоставляет REST API для создания, управления и просмотра данных о банковских картах, а также выполнения операций между картами пользователя.
+Backend-часть системы управления банковскими картами, разработанная в рамках тестового задания. Система обеспечивает создание, управление и просмотр данных о банковских картах, а также выполнение операций между картами пользователя с использованием REST API.
 
-Функциональные возможности
-Для администраторов:
-1.Создание, блокировка, активация и удаление карт
-2.Просмотр всех карт в системе
-3.Управление пользователями
+## Стек Технологий
 
-Для пользователей:
-1.Просмотр своих карт с поиском и постраничной выдачей
-2.Запрос на блокировку карты
-3.Переводы между своими картами
-4.Просмотр баланса по картам
+*   **Язык:** Java 17
+*   **Фреймворк:** Spring Boot 3.x
+*   **Безопасность:** Spring Security (JWT аутентификация + Refresh Tokens)
+*   **Работа с данными:** Spring Data JPA (Hibernate)
+*   **База данных:** PostgreSQL (в Docker)
+*   **Миграции БД:** Liquibase
+*   **Документация API:** [OpenAPI 3 (Swagger UI)](https://springdoc.org/#getting-started)
+*   **Сборка:** Maven 
+*   **Контейнеризация:** Docker, Docker Compose
+*   **Вспомогательные:** Lombok, MapStruct Spring Validation, Apache Commons Validator
 
-Технологии
-Java 17+
-Spring Boot 3.x
-Spring Security + JWT
-Spring Data JPA (Hibernate)
-PostgreSQL/MySQL
-Liquibase (миграции БД)
-Docker (развертывание)
-OpenAPI (Swagger UI) (документация API)
-JUnit 5 (тестирование)
-Требования
-JDK 17+
-Maven 3.8+
-Docker 20.10+ (опционально)
-PostgreSQL 14+ или MySQL 8+ (если не используется Docker)
+## Функциональные Возможности (Кратко)
 
-Установка и запуск
-Вариант 1: Запуск с помощью Docker (рекомендуется)
-Клонируйте репозиторий:
+*   **Аутентификация/Авторизация:** JWT (Access + Refresh Tokens), Роли (ADMIN, USER), Регистрация.
+*   **Карты:**
+    *   Автоматическая генерация номеров (с проверкой по Луну).
+    *   Шифрование номера карты (AES/GCM).
+    *   Маскирование номера карты в API ответах.
+    *   CRUD операции (с учетом ролей).
+    *   Управление статусами (`ACTIVE`, `BLOCKED`, `EXPIRED`).
+    *   Переводы между картами одного пользователя.
+    *   Просмотр баланса (одной карты / общий).
+    *   Параметризованная фильтрация и пагинация списков.
+*   **Управление пользователями (Admin):** CRUD операции над пользователями через `/api/admin/users`.
 
-bash
-git clone https://github.com/your-username/card-management-system.git
+## Статусы Карт
+*   `ACTIVE`: Карта активна и может использоваться для операций.
+*   `BLOCKED`: Карта заблокирована администратором. Неактивна для операций.
+*   `EXPIRED`: Срок действия карты истек. Неактивна для операций.
 
-cd card-management-system
-Запустите приложение с помощью Docker Compose:
+## Безопасность
+*   Аутентификация по email/паролю с использованием JWT и Refresh Tokens.
+*   Разделение прав доступа на основе ролей (ADMIN, USER).
+*   Номера карт хранятся в базе данных в **зашифрованном** виде (AES/GCM).
+*   Номера карт **маскируются** при отображении через API (`**** **** **** 1234`).
+*   Пароли пользователей хранятся в виде **хешей** (BCrypt).
+*   Валидация входящих данных.
+*   Централизованная обработка ошибок.
 
-bash
-docker-compose up -d
-Приложение будет доступно по адресу: http://localhost:8080
+## Настройка и Запуск (Локально через Docker Compose)
 
-Вариант 2: Локальный запуск
-Создайте базу данных (PostgreSQL или MySQL) и обновите настройки в application.yml
+### Требования
+*   Java 17+ JDK
+*   Gradle 7+ (или новее)
+*   Docker
+*   Docker Compose
 
-Запустите приложение:
+### Инструкции по запуску
+1.  **Клонируйте репозиторий:**
+    ```bash
+    git clone https://github.com/GitLobanov/ts-card-management-service
+    cd card-management-system
+    ```
+2.  **(Важно!) Настройте секреты:**
+    В файле `src/main/resources/application.yml` (или через переменные окружения при запуске `docker-compose`) необходимо задать безопасные значения для:
+    *   `app.jwt.secret`: Секрет для подписи JWT (Base64-encoded, рекомендуемая длина >= 256 бит).
+    *   `app.encryption.key`: Ключ для шифрования номеров карт (строка длиной **ровно 32 символа** для AES-256).
 
-bash
-mvn spring-boot:run
-Настройка
-Основные настройки можно изменить в файле src/main/resources/application.yml:
+3.  **Соберите проект:**
+    ```bash
+    ./gradlew clean build
+    ```
+    Это создаст исполняемый JAR-файл в директории `build/libs`.
 
-yaml
-server:
-  port: 8080
+4.  **Запустите сервисы с помощью Docker Compose:**
+    ```bash
+    docker-compose up --build
+    ```
+    *   Параметр `--build` пересобирает образ приложения, если были изменения в коде или Dockerfile.
+    *   Docker Compose поднимет контейнер с PostgreSQL и контейнер с вашим Spring Boot приложением. Liquibase автоматически применит миграции БД при первом запуске приложения.
 
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/card_db
-    username: postgres
-    password: postgres
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: true
+5.  **Приложение будет доступно по адресу:** `http://localhost:8080`
 
-app:
-  jwt:
-    secret: your-secret-key
-    expiration: 86400000 # 24 hours
-Документация API
-После запуска приложения документация API доступна через Swagger UI:
+## Доступ к API и Тестовые Данные
+*   **Swagger UI (Документация API):** `http://localhost:8080/swagger-ui/index.html#/`
+*   **Тестовые пользователи** (создаются через Liquibase миграцию `002-add-test-users.xml`):
+    *   Администратор:
+        *   Email: `admin@example.com`
+        *   Пароль: `admin`
+    *   Пользователь:
+        *   Email: `user@example.com`
+        *   Пароль: `password`
+*   **Регистрация:**
+    *   Доступен эндпоинт `POST /api/auth/register` для создания новых пользователей (с ролью `USER`).
+    *   Пример тела запроса:
+        ```json
+        {
+          "email": "new.user@example.com",
+          "password": "password123"
+        }
+        ```
+*   **Использование API:**
+    1.  Перейдите в Swagger UI.
+    2.  Используйте эндпоинт `POST /api/auth/login` для получения `accessToken` и `refreshToken`.
+    3.  Скопируйте `accessToken`.
+    4.  Нажмите кнопку "Authorize" в правом верхнем углу Swagger UI.
+![img.png](swagger-to-authorize.png)
+     5.  Вставьте `accessToken` в поле "Value" (например: `eyJhbGciOi...`).
+     6.  Нажмите "Authorize" и "Close".
+     7.  Теперь вы можете выполнять запросы к защищенным эндпоинтам.
+     8.  Когда `accessToken` истечет, используйте эндпоинт `POST /api/auth/refresh` с вашим `refreshToken` для получения новой пары токенов.
 
-http://localhost:8080/swagger-ui.html
-
-Также доступна OpenAPI спецификация:
-
-http://localhost:8080/v3/api-docs
-
-Тестирование
-Для запуска тестов выполните:
-
-bash
-mvn test
-Миграции базы данных
-Миграции управляются с помощью Liquibase и находятся в src/main/resources/db/changelog/.
-
-Примеры запросов
-Аутентификация
-http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "admin@example.com",
-  "password": "admin123"
-}
-Получение списка карт (для пользователя)
-http
-GET /api/cards
-Authorization: Bearer <your-jwt-token>
-Создание новой карты (для администратора)
-http
-POST /api/cards
-Authorization: Bearer <your-jwt-token>
-Content-Type: application/json
-
-{
-  "cardNumber": "4111111111111111",
-  "cardHolder": "John Doe",
-  "expirationDate": "12/25",
-  "balance": 1000.00
-}
+## TODO / Возможные Улучшения
+* Планировщик задач (Scheduler) для очистки старых Refresh Tokens или установки статуса EXPIRED для карт.
+* Повысить покрытие тестами
