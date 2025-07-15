@@ -54,7 +54,7 @@ Backend-часть системы управления банковскими к
 ### Инструкции по запуску
 1.  **Клонируйте репозиторий:**
     ```bash
-    git clone https://github.com/GitLobanov/ts-card-management-service
+    git clone https://github.com/Polyakov1/Bank-Card-Management-Systems
     cd card-management-system
     ```
 2.  **(Важно!) Настройте секреты:**
